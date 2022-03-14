@@ -167,7 +167,7 @@ def read_obj_data(LABEL_PATH, calib=None, im_shape=None):
             List of KittiObject : Contains all the labeled data
 
     '''
-    used_cls = ['Car', 'Van' ,'Truck', 'Misc']
+    used_cls = ['Car', 'Van' ,'Truck', 'Misc', 'Cyclist', 'Pedestrian']
     objects = []
 
     detection_data = open(LABEL_PATH, 'r')
@@ -437,16 +437,22 @@ def infer_boundary(im_shape, boxes_left):
     return left_right
 
 #---------------------------------------------------- Data Writing -------------------------------------------------#
-def write_detection_results(result_dir, file_number, calib, box_left, pos, dim, orien, score):
+def write_detection_results(j, result_dir, file_number, calib, box_left, pos, dim, orien, score):
     '''One by one write detection results to KITTI format label files.
     '''
+    print("the class is ",j)
+
     if result_dir is None: return
     result_dir = result_dir + '/data'
-
     # convert the object from cam2 to the cam0 frame
     dis_cam02 = calib.t_cam2_cam0[0]
     
-    output_str = 'Car -1 -1 '
+    if j==1:
+      output_str = 'Car -1 -1 '
+    if j==2:
+      output_str = 'Pedestrian -1 -1 '
+    if j==3:
+      output_str = 'Cyclist -1 -1 '
     alpha = orien - m.pi/2 + m.atan2(-pos[0], pos[2])
     output_str += '%f %f %f %f %f ' % (alpha, box_left[0],box_left[1],box_left[2],box_left[3])
     output_str += '%f %f %f %f %f %f %f %f \n' % (dim[1],dim[0],dim[2],pos[0]-dis_cam02,pos[1],\
@@ -459,17 +465,3 @@ def write_detection_results(result_dir, file_number, calib, box_left, pos, dim, 
     with open(pred_filename, 'a') as det_file:
         det_file.write(output_str)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
