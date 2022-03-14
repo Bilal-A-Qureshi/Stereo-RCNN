@@ -27,7 +27,6 @@ import pickle
 from .imdb import imdb
 from .imdb import ROOT_DIR
 from model.utils import kitti_utils
-import cPickle
 from model.utils.config import cfg
 
 try:
@@ -44,7 +43,7 @@ class kitti(imdb):
         self._kitti_path = kitti_path
 
         self._data_path = os.path.join(self._kitti_path)
-        self._classes = ('__background__', 'Car')
+        self._classes = ('__background__', 'Car', 'Pedestrian', 'Cyclist')
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_ext = '.png'
         self._image_index = self._load_image_set_index_new()
@@ -125,7 +124,7 @@ class kitti(imdb):
         print('cache file', cache_file)
         if os.path.exists(cache_file):
             with open(cache_file, 'rb') as fid:
-                roidb = cPickle.load(fid)
+                roidb = pickle.load(fid)
             print('{} gt roidb loaded from {}'.format(self.name, cache_file))
             return roidb
 
@@ -133,7 +132,7 @@ class kitti(imdb):
                     for index in self.image_index]
 
         with open(cache_file, 'wb') as fid:
-            cPickle.dump(gt_roidb, fid, cPickle.HIGHEST_PROTOCOL)
+            pickle.dump(gt_roidb, fid, pickle.HIGHEST_PROTOCOL)
         print('wrote gt roidb to {}'.format(cache_file))
 
         return gt_roidb
