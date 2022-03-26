@@ -464,4 +464,3 @@ def write_detection_results(j, result_dir, file_number, calib, box_left, pos, di
     pred_filename = result_dir + '/' + file_number + '.txt'
     with open(pred_filename, 'a') as det_file:
         det_file.write(output_str)
-
