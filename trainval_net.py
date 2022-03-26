@@ -32,6 +32,10 @@ from model.utils.net_utils import weights_normal_init, save_net, load_net, \
 
 from model.stereo_rcnn.resnet import resnet
 
+import torch
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter('log_dir')
+
 def parse_args():
   '''
   Parse input arguments
@@ -40,10 +44,10 @@ def parse_args():
 
   parser.add_argument('--start_epoch', dest='start_epoch',
                       help='starting epoch',
-                      default=1, type=int)
+                      default=5, type=int)
   parser.add_argument('--epochs', dest='max_epochs',
                       help='number of epochs to train',
-                      default=20, type=int)
+                      default=12, type=int)
 
   parser.add_argument('--save_dir', dest='save_dir',
                       help='directory to save models', default="models_stereo",
@@ -58,7 +62,7 @@ def parse_args():
   # config optimization
   parser.add_argument('--lr_decay_step', dest='lr_decay_step',
                       help='step to do learning rate decay, unit is epoch',
-                      default=5, type=int)
+                      default=10, type=int)
   parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                       help='learning rate decay ratio',
                       default=0.1, type=float)
@@ -183,6 +187,7 @@ if __name__ == '__main__':
   iters_per_epoch = int(train_size / args.batch_size)
   for epoch in range(args.start_epoch, args.max_epochs + 1):
     
+    print("epoch is",epoch)
     stereoRCNN.train()
     start = time.time()
 
@@ -228,23 +233,30 @@ if __name__ == '__main__':
 
       end = time.time()
 
-      loss_rpn_cls = rpn_loss_cls.data[0]
-      loss_rpn_box_left_right = rpn_loss_box_left_right.data[0]
-      loss_rcnn_cls = RCNN_loss_cls.data[0]
-      loss_rcnn_box = RCNN_loss_bbox.data[0]
-      loss_rcnn_dim_orien = RCNN_loss_dim_orien.data[0]
+      loss_rpn_cls = rpn_loss_cls.item()
+      loss_rpn_box_left_right = rpn_loss_box_left_right.item()
+      loss_rcnn_cls = RCNN_loss_cls.item()
+      loss_rcnn_box = RCNN_loss_bbox.item()
+      loss_rcnn_dim_orien = RCNN_loss_dim_orien.item()
       loss_rcnn_kpts = RCNN_loss_kpts
       fg_cnt = torch.sum(rois_label.data.ne(0))
       bg_cnt = rois_label.data.numel() - fg_cnt
 
+      writer.add_scalar("Loss/train_epoch", loss.item(), epoch)
+
+      writer.add_scalar("Loss/train_step", loss.item(), step)
+      
+
+      writer.flush()
+
       log_string('[epoch %2d][iter %4d/%4d] loss: %.4f, lr: %.2e'\
-            %(epoch, step, iters_per_epoch, loss.data[0], lr))
+            %(epoch, step, iters_per_epoch, loss.item(), lr))
       log_string('\t\t\tfg/bg=(%d/%d), time cost: %f' %(fg_cnt, bg_cnt, end-start))
       log_string('\t\t\trpn_cls: %.4f, rpn_box_left_right: %.4f, rcnn_cls: %.4f, rcnn_box_left_right %.4f,dim_orien %.4f, kpts %.4f' \
             %(loss_rpn_cls, loss_rpn_box_left_right, loss_rcnn_cls, loss_rcnn_box, loss_rcnn_dim_orien, loss_rcnn_kpts))
 
       del loss, rpn_loss_cls, rpn_loss_box_left_right, RCNN_loss_cls, RCNN_loss_bbox, RCNN_loss_dim_orien, RCNN_loss_kpts
-
+    
     save_name = os.path.join(output_dir, 'stereo_rcnn_{}_{}.pth'.format(epoch, step))
     save_checkpoint({
       'epoch': epoch + 1,
@@ -256,9 +268,3 @@ if __name__ == '__main__':
     log_string('save model: {}'.format(save_name)) 
     end = time.time()
     log_string('time %.4f' %(end - start))
-
-
-
-
-
-    
