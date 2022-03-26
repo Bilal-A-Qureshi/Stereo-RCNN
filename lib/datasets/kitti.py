@@ -30,9 +30,9 @@ from model.utils import kitti_utils
 from model.utils.config import cfg
 
 try:
-    xrange          # Python 2
+    xrange          # Python  2
 except NameError:
-    xrange = range  # Python 3
+    xrange = range  # Python  3
 
 class kitti(imdb):
     def __init__(self, image_set, kitti_path=None):
